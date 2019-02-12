@@ -26,3 +26,9 @@ $ fab build
 $ fab deploy
 ```
 
+## Testing
+
+```sh
+$ python setup.py test
+```
+
