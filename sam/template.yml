@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: forest
+
+Parameters:
+  SlackApiSigningSecret:
+    Type: String
+  SlackApiToken:
+    Type: String
+  SlackBotName:
+    Type: String
+    Default: '渔场一哥'
+
+Globals:
+  Function:
+    Runtime: python3.7
+    Timeout: 10
+    Environment:
+      Variables:
+        SLACK_API_SIGNING_SECRET: !Ref SlackApiSigningSecret
+        SLACK_API_TOKEN: !Ref SlackApiToken
+        SLACK_BOT_NAME: !Ref SlackBotName
+        TABLE_POLLS: !Ref PollsTable
+
+Resources:
+  CommandPingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub forest-command_ping-${AWS::StackName}
+      Description: !Sub forest for stack ${AWS::StackName}
+      Handler: handlers.command_ping
+      Role: !Sub ${DynamoDBCrudRole.Arn}
+      Events:
+        Ping:
+          Type: Api
+          Properties:
+            Path: /commands/ping
+            Method: POST
+  CommandPollFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub forest-command_poll-${AWS::StackName}
+      Description: !Sub forest for stack ${AWS::StackName}
+      Handler: handlers.command_poll
+      Role: !Sub ${DynamoDBCrudRole.Arn}
+      Events:
+        Ping:
+          Type: Api
+          Properties:
+            Path: /commands/poll
+            Method: POST
+  ActionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub forest-actions-${AWS::StackName}
+      Description: !Sub forest for stack ${AWS::StackName}
+      Handler: handlers.actions
+      Role: !Sub ${DynamoDBCrudRole.Arn}
+      Events:
+        Ping:
+          Type: Api
+          Properties:
+            Path: /actions
+            Method: POST
+
+  PollsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: message_ts
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 3
+        WriteCapacityUnits: 3
+
+  DynamoDBCrudRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: !Join ["", ["/", !Ref "AWS::StackName", "/"]]
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowLambdaServiceToAssumeRole
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyName: AllowCRUDOperationsOnDynamoDB
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:PutItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                  - dynamodb:UpdateItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:BatchGetItem
+                Resource:
+                  - !Sub ${PollsTable.Arn}
+
+Outputs:
+  ForestApi:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
