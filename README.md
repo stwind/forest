@@ -5,6 +5,7 @@ A slack app built with AWS [SAM](https://docs.aws.amazon.com/serverless-applicat
 ## Requirements
 
 * [pyenv](https://github.com/pyenv/pyenv)
+* [aws-cli](https://github.com/aws/aws-cli)
 * [aws-sam-cli](https://github.com/awslabs/aws-sam-cli)
 
 ## Building and deployment
