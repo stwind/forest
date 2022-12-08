@@ -8,7 +8,7 @@
 boltons==18.0.1           # via forest
 boto3==1.9.86             # via forest
 botocore==1.12.86         # via boto3, s3transfer
-certifi==2018.11.29       # via requests
+certifi==2022.12.7       # via requests
 chardet==3.0.4            # via requests
 docutils==0.14            # via botocore
 forest==0.1.0
